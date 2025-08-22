@@ -6,18 +6,11 @@ const app = express();
 const { User } = require("./models/user");
 
 // const { adminAuth, userAuth } = require("./middlewares/auth");
+app.use(express.json()); //middleware to convert json to js object
 
 app.post("/signup", async (req, res) => {
-  const userObj = {
-    firstName: "Shaurya",
-    lastName: "Jaiswal",
-    emailId: "shaurya@jaiswal.com",
-    password: "shaurya@123",
-    age: 23,
-    gender: "Male",
-  };
-
-  const user = new User(userObj);
+  //Creating a new instance of the user model from the data that I got from the API
+  const user = new User(req.body);
   try {
     await user.save();
     res.send("User added successfully to the DB!");
@@ -26,6 +19,49 @@ app.post("/signup", async (req, res) => {
   }
 });
 
+app.get("/user", async (req, res) => {
+  const email = req.body.emailId;
+  try {
+    const users = await User.find({ emailId: email });
+    if (users.length === 0) {
+      res.status(404).send("User not found");
+    } else {
+      res.send(users);
+    }
+  } catch (err) {
+    res.status(400).send("Error finding the user : " + err.message);
+  }
+});
+
+app.get("/feed", async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.send(users);
+  } catch (err) {
+    res.status(400).send("Error finding the user : " + err.message);
+  }
+});
+
+app.delete("/user", async (req, res) => {
+  const userId = req.body.userId;
+  try {
+    const user = await User.findByIdAndDelete(userId);
+    res.send("User successfully deleted");
+  } catch (err) {
+    res.status(400).send("Error finding the user : " + err.message);
+  }
+});
+
+app.patch("/user", async (req, res) => {
+  const data = req.body;
+  const userId = req.body.userId;
+  try {
+    await User.findByIdAndUpdate(userId, data);
+    res.send("User updated successfully!");
+  } catch (err) {
+    res.status(400).send("Something went wrong : " + err.message);
+  }
+});
 connectDB()
   .then(() => {
     console.log("Database connection established!");
@@ -36,20 +72,3 @@ connectDB()
   .catch((err) => {
     console.log("Database connection cannot be established!");
   });
-// app.use("/admin", adminAuth);
-
-// app.get("/user", userAuth, (req, res) => {
-//   res.send("All data sent");
-// });
-
-// app.get("/user/login", (req, res) => {
-//   res.send("User logged in successfully");
-// });
-
-// app.get("/admin/getAllData", (req, res) => {
-//   res.send("All data sent");
-// });
-
-// app.get("/admin/deleteUser", (req, res) => {
-//   res.send("deleted user");
-// });
