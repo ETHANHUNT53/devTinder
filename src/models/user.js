@@ -22,7 +22,6 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      minLength: 8,
       validate(value) {
         if (!validator.isEmail(value)) {
           throw new Error("Invalid email address : " + value);
@@ -35,7 +34,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       validate(value) {
         if (!validator.isStrongPassword(value)) {
-          throw new Error("Enter strong password");
+          throw new Error("Please enter a strong password");
         }
       },
     },

@@ -2,7 +2,7 @@ const express = require("express");
 
 const { connectDB } = require("./config/database");
 const app = express();
-
+const bcrypt = require("bcrypt");
 const { User } = require("./models/user");
 
 // const { adminAuth, userAuth } = require("./middlewares/auth");
@@ -10,12 +10,40 @@ app.use(express.json()); //middleware to convert json to js object
 
 app.post("/signup", async (req, res) => {
   //Creating a new instance of the user model from the data that I got from the API
-  const user = new User(req.body);
   try {
+    const { password, firstName, lastName, emailId } = req.body;
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log(passwordHash);
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+    });
+
     await user.save();
     res.send("User added successfully to the DB!");
   } catch (err) {
     res.status(400).send("Error saving the user : " + err.message);
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const { password, emailId } = req.body;
+
+    const user = await User.findOne({ emailId: emailId });
+    if (!user) {
+      throw new Error("Invalid credentials");
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (isPasswordValid) {
+      res.send("Login Successful!");
+    } else {
+      throw new Error("Invalid credentials");
+    }
+  } catch (err) {
+    res.status(400).send("Invalid credentials");
   }
 });
 
