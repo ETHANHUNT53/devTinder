@@ -4,10 +4,11 @@ const { connectDB } = require("./config/database");
 const app = express();
 const bcrypt = require("bcrypt");
 const { User } = require("./models/user");
-
-// const { adminAuth, userAuth } = require("./middlewares/auth");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middlewares/auth");
 app.use(express.json()); //middleware to convert json to js object
-
+app.use(cookieParser());
 app.post("/signup", async (req, res) => {
   //Creating a new instance of the user model from the data that I got from the API
   try {
@@ -38,12 +39,25 @@ app.post("/login", async (req, res) => {
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (isPasswordValid) {
+      const token = jwt.sign({ _id: user._id }, "SECRETKEY123");
+      res.cookie("token", token, {
+        expires: new Date(Date.now() + 8 * 3600000),
+      });
       res.send("Login Successful!");
     } else {
       throw new Error("Invalid credentials");
     }
   } catch (err) {
     res.status(400).send("Invalid credentials");
+  }
+});
+
+app.get("/profile", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    res.send(user);
+  } catch (err) {
+    res.status(400).send("ERROR " + err.message);
   }
 });
 
